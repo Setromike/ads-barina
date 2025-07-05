@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Shake İçki Oyunu</title>
+
+  <!-- Monetag reklam SDK -->
+  <meta name="monetag" content="feb04bd6347d798fef6f9db246d2525e">
+  <script src="//libtl.com/sdk.js" data-zone="9527089" data-sdk="show_9527089"></script>
+
   <style>
     body {
       margin: 0;
@@ -36,7 +41,6 @@
     #shakeCount {
       font-size: 18px;
       margin-bottom: 10px;
-      text-shadow: 0 0 5px black;
     }
     #drinkDisplay {
       display: none;
@@ -53,22 +57,17 @@
     }
     button {
       padding: 10px 20px;
-      margin: 10px;
+      margin: 10px 5px;
       font-size: 16px;
       border: none;
       border-radius: 10px;
       cursor: pointer;
       user-select: none;
     }
-    /* Karıcını rəngdə düymələr, ağ yazı */
-    .brown-button {
-      background-color: #6b4e16;
+    .dark-button {
+      background-color: #333333;
       color: white;
-      box-shadow: 0 0 10px #6b4e16;
-    }
-    .brown-button:hover {
-      background-color: #845c22;
-      box-shadow: 0 0 15px #845c22;
+      box-shadow: 0 0 10px #000000;
     }
     #shelfPopup {
       display: none;
@@ -80,7 +79,6 @@
       padding: 20px;
       overflow-y: auto;
       z-index: 1000;
-      color: white;
     }
     #shelfPopup h3 {
       margin-top: 0;
@@ -95,9 +93,9 @@
       background: #6b4e16;
       border-radius: 10px;
       padding: 10px;
+      color: #fff;
       text-align: center;
       width: 120px;
-      user-select: none;
     }
     .drinkItem img {
       width: 80px;
@@ -112,29 +110,17 @@
       border-radius: 50%;
       width: 30px;
       height: 30px;
-      cursor: pointer;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 26px;
-      user-select: none;
-    }
-    #withdrawBtn {
-      display: none;
-      background-color: #b22222;
-      color: white;
-      margin-top: 10px;
-      padding: 10px 25px;
-      border-radius: 10px;
       cursor: pointer;
       user-select: none;
-      font-weight: bold;
-      box-shadow: 0 0 10px #b22222;
     }
   </style>
 </head>
 <body>
 
-  <div id="shakeCount">Shake: 0/10</div>
-  <div id="shaker" title="Shake etmək üçün kliklə"></div>
+  <div id="shakeCount">Shake: 10/10</div>
+  <div id="shaker" title="Reklam izləyərək 10 shake qazan"></div>
 
   <div id="drinkDisplay">
     <img id="drinkImg" src="" alt="İçki" />
@@ -143,9 +129,8 @@
     <button onclick="addToShelf()">Rəfə əlavə et</button>
   </div>
 
-  <button class="brown-button" onclick="toggleShelf()">Rəf</button>
-  <button class="brown-button" onclick="checkBalance()">Balans</button>
-  <button id="withdrawBtn" class="brown-button" onclick="withdraw()">Çıxarış</button>
+  <button id="shelfBtn" class="dark-button" onclick="toggleShelf()">Rəf</button>
+  <button id="balanceBtn" class="dark-button" onclick="checkBalance()">Balans</button>
 
   <div id="shelfPopup">
     <button class="closeBtn" onclick="toggleShelf()">×</button>
@@ -154,7 +139,7 @@
   </div>
 
   <script>
-    let shakeCount = 0;
+    let shakeCount = 10;
     let drinks = [];
     let balance = 0;
 
@@ -171,32 +156,30 @@
       document.getElementById('shakeCount').innerText = `Shake: ${shakeCount}/10`;
     }
 
-    function showAdAndReward() {
-      // Burda sənin reklam funksiyan olacaq. Misal üçün Monetag reklam çağırışı:
-      return show_9532911().then(() => {
+    async function showAdAndReward() {
+      try {
+        await show_9527089();
         alert('Reklam izlədiniz! 10 shake əlavə edildi.');
         shakeCount = 10;
         updateShakeText();
-      });
+      } catch (e) {
+        alert('Reklamı açmaq mümkün olmadı.');
+      }
     }
 
-    document.getElementById('shaker').addEventListener('click', () => {
+    document.getElementById('shaker').addEventListener('click', async () => {
       if (shakeCount <= 0) {
-        // Reklamı göstər və 10 shake ver
-        showAdAndReward();
+        await showAdAndReward();
       } else {
-        // Shake istifadə et
         shakeCount--;
         updateShakeText();
 
         if (shakeCount === 0) {
-          // Shake bitdi, təsadüfi içki göstər
           const drink = drinkData[Math.floor(Math.random() * drinkData.length)];
           document.getElementById('drinkImg').src = drink.img;
           document.getElementById('drinkName').innerText = drink.name;
           document.getElementById('drinkPrice').innerText = `Qiymət: ${drink.price.toFixed(4)} TON`;
           document.getElementById('drinkDisplay').style.display = 'block';
-          checkWithdrawButton();
         }
       }
     });
@@ -207,87 +190,62 @@
       const price = parseFloat(document.getElementById('drinkPrice').innerText.split(':')[1]);
       drinks.push({ name, img, price });
       document.getElementById('drinkDisplay').style.display = 'none';
-      shakeCount = 0;
+      shakeCount = 10;
       updateShakeText();
-      toggleShelf();
     }
 
     function toggleShelf() {
       const popup = document.getElementById('shelfPopup');
       popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-      refreshDrinkList();
-      checkWithdrawButton();
+      renderDrinkList();
     }
 
-    function refreshDrinkList() {
+    function renderDrinkList() {
       const list = document.getElementById('drinkList');
       list.innerHTML = '';
       drinks.forEach((drink, i) => {
         const item = document.createElement('div');
         item.className = 'drinkItem';
         item.innerHTML = `
-          <img src="${drink.img}" />
+          <img src="${drink.img}" alt="${drink.name}" />
           <strong>${drink.name}</strong><br/>
           ${drink.price.toFixed(4)} TON<br/>
-          <button onclick="sellDrink(${i})">Sat</button>
+          <button onclick="sellDrink(${i})" ${drink.price < 1 ? 'disabled style="opacity:0.5;cursor:not-allowed;"' : ''}>
+            Çıxarış
+          </button>
         `;
         list.appendChild(item);
       });
     }
 
     function sellDrink(index) {
-      balance += drinks[index].price;
+      const drink = drinks[index];
+      if (drink.price < 1) {
+        alert('Çıxarış üçün ən azı 1 TON olmalıdır.');
+        return;
+      }
+      // Burada adminə mesaj göndərmə mexanizmi Telegram bot və ya serverə bağlıdır.
+      // Simulyasiya üçün alert göstəririk:
+      alert(`Adminə mesaj göndərildi: İstifadəçi çıxarış istədi. Məbləğ: ${drink.price.toFixed(4)} TON`);
+      // Balansa əlavə et və rəfdən sil
+      balance += drink.price;
       drinks.splice(index, 1);
-      refreshDrinkList();
-      checkWithdrawButton();
+      renderDrinkList();
     }
 
     function checkBalance() {
       let message = `Balans: ${balance.toFixed(4)} TON\n`;
       if (balance >= 1) {
-        message += `Çıxarış üçün "Çıxarış" düyməsini basın.`;
+        message += `Çıxarış üçün adminlə əlaqə saxlayın: @Mansio44\nİstifadəçi ID: 8197921729`;
+        balance = 0;
       } else {
         message += 'Balansda kifayət qədər TON yoxdur (minimum 1 TON).';
       }
       alert(message);
     }
 
-    function checkWithdrawButton() {
-      const btn = document.getElementById('withdrawBtn');
-      if (balance >= 1) {
-        btn.style.display = 'inline-block';
-      } else {
-        btn.style.display = 'none';
-      }
-    }
-
-    function withdraw() {
-      if (balance >= 1) {
-        // Burada adminə mesaj göndərmək üçün server/Telegram bot API istifadə olunmalıdır.
-        // Biz sadəcə alert göstəririk ki, "mesaj göndərildi".
-        alert(`Adminə çıxarış üçün müraciət göndərildi.\nMəbləğ: ${balance.toFixed(4)} TON`);
-        balance = 0;
-        checkWithdrawButton();
-      } else {
-        alert('Çıxarış üçün balans kifayət deyil!');
-      }
-    }
-
-    // Monetag reklam simulyasiyası (sənin linkinlə əvəz et)
-    function show_9532911() {
-      return new Promise(resolve => {
-        // Burada əsl reklam göstəriləcək
-        // Simulyasiya üçün 2 saniyə gözləmə
-        setTimeout(() => {
-          resolve();
-        }, 2000);
-      });
-    }
-
-    // Başlanğıc
     updateShakeText();
-    checkWithdrawButton();
-
   </script>
+
 </body>
 </html>
