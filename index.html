@@ -1,295 +1,200 @@
-<!DOCTYPE html>
-<html lang="az">
+<!DOCTYPE html><html lang="az">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shake + Reklam + Rəf Sistemi</title>
+  <title>Shake + Rəf + Reklam + Çıxarış Sistemi</title>
+  <meta name="monetag" content="feb04bd6347d798fef6f9db246d2525e">
+  <script src="//libtl.com/sdk.js" data-zone="9532911" data-sdk="show_9532911"></script>
   <style>
     body {
       margin: 0; padding: 20px;
       font-family: Arial, sans-serif;
       background: url('https://i.postimg.cc/DZTBLf46/barlesieur-51-1.jpg') no-repeat center center fixed;
       background-size: cover;
-      color: #fff;
-      text-align: center;
-      user-select: none;
+      color: #fff; text-align: center;
     }
     #shaker {
-      width: 150px;
-      height: 150px;
-      margin: 40px auto;
+      width: 150px; height: 150px;
+      margin: 30px auto;
       background: url('https://i.postimg.cc/zDLFvRQN/1751630764334.png') no-repeat center;
       background-size: contain;
       cursor: pointer;
-      transition: transform 0.2s ease;
     }
-    #shaker:active {
-      transform: scale(0.95);
-    }
-    #shakeCount {
-      font-size: 22px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 5px #000;
-    }
-    button {
-      margin: 10px 10px;
-      padding: 12px 25px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
+    #shakeCount { font-size: 22px; margin: 15px; }
+    .glowBtn {
+      background-color: #4b0082;
+      color: white;
+      padding: 12px 24px;
+      margin: 10px;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: bold;
+      box-shadow: 0 0 12px lime;
+      animation: blink 1.5s infinite;
       cursor: pointer;
-      color: white;
-      font-weight: bold;
-      text-shadow: 0 0 3px #000;
     }
-    #shelfBtn, #balanceBtn {
-      background-color: #4b0082; /* kariçni rəng */
-      color: white;
-      box-shadow: 0 0 10px #6a00ff;
+    @keyframes blink {
+      0% { box-shadow: 0 0 5px lime; }
+      50% { box-shadow: 0 0 15px lime; }
+      100% { box-shadow: 0 0 5px lime; }
     }
-    #reklamLimit {
-      margin-top: 15px;
-      font-size: 16px;
-      color: #ddd;
-      text-shadow: 0 0 3px #000;
-    }
+    #reklamLimit { margin-top: 10px; font-size: 16px; color: #ccc; }
     #shelfPopup {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.85);
-      padding: 20px;
-      overflow-y: auto;
       z-index: 1000;
-      color: white;
-    }
-    #shelfPopup h2 {
-      margin-top: 0;
-      margin-bottom: 15px;
-      text-shadow: 0 0 4px #000;
-    }
-    #drinkList {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
+      padding: 20px; color: #fff;
     }
     .drinkItem {
-      width: 140px;
-      border-radius: 12px;
+      background: #222;
       padding: 10px;
-      color: white;
-      text-align: center;
-      position: relative;
-      font-weight: bold;
-      animation: blinkLight 2s infinite alternate;
-      cursor: default;
+      border-radius: 10px;
+      margin: 10px;
+      display: inline-block;
+      animation: blink 2s infinite alternate;
     }
     .drinkItem img {
-      max-width: 100px;
-      margin-bottom: 8px;
+      width: 80px;
       border-radius: 8px;
     }
     .drinkItem button {
-      margin-top: 8px;
-      background: rgba(255,255,255,0.2);
-      color: white;
+      margin-top: 5px;
+      padding: 5px 10px;
+      background: #ff5f6d;
+      border: none;
       border-radius: 6px;
-      padding: 6px 12px;
-      font-weight: 600;
+      color: white;
       cursor: pointer;
-      border: 1px solid white;
-      text-shadow: 0 0 2px #000;
     }
     .closeBtn {
       position: absolute;
-      top: 15px;
-      right: 15px;
-      background: #cc0000;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      font-size: 22px;
-      line-height: 28px;
-      cursor: pointer;
+      top: 10px; right: 10px;
+      background: red;
       color: white;
       border: none;
-      text-shadow: 0 0 3px #000;
-    }
-    /* Rəf içkilərinin fon rəngləri */
-    .color0 { background: #b22222; }  /* FireBrick */
-    .color1 { background: #228b22; }  /* ForestGreen */
-    .color2 { background: #1e90ff; }  /* DodgerBlue */
-    .color3 { background: #ffa500; }  /* Orange */
-    .color4 { background: #9400d3; }  /* DarkViolet */
-    .color5 { background: #ff1493; }  /* DeepPink */
-
-    @keyframes blinkLight {
-      0% { box-shadow: 0 0 5px 2px rgba(255,255,255,0.4);}
-      100% { box-shadow: 0 0 18px 7px rgba(255,255,255,0.8);}
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      font-size: 20px;
     }
   </style>
 </head>
-<body>
+<body>  <div id="shakeCount">Shake: 0/10</div>
+  <div id="shaker"></div><button class="glowBtn" id="shelfBtn">Rəf</button> <button class="glowBtn" id="balanceBtn">Balans</button>
 
-  <div id="shakeCount">Shake: 10/10</div>
-  <div id="shaker" title="Shake etmək üçün toxun"></div>
-
-  <button id="shelfBtn">Rəf</button>
-  <button id="balanceBtn">Balans</button>
-
-  <div id="reklamLimit">Reklam izləmə: 0 / 50</div>
-
-  <div id="shelfPopup">
-    <button class="closeBtn" title="Bağla">×</button>
+  <div id="reklamLimit">Reklam izləmə: 0/50</div>  <div id="shelfPopup">
+    <button class="closeBtn" onclick="document.getElementById('shelfPopup').style.display='none'">×</button>
     <h2>Sənin İçkilərin</h2>
     <div id="drinkList"></div>
-  </div>
+  </div>  <script>
+    const LS_SHAKE = 'shakeCount';
+    const LS_DRINKS = 'drinks';
+    const LS_BAL = 'balance';
+    const LS_ADS = 'adsCount';
+    const LS_DATE = 'adsDate';
 
-<script>
-  // İçkilər məlumatı
-  const drinkData = [
-    { name: "Rum", img: "https://i.postimg.cc/vTLBThFX/1751630934178.png", price: 0.0007 },
-    { name: "Tequila", img: "https://i.postimg.cc/zGfBDTdS/1751631002805.png", price: 0.0008 },
-    { name: "Mojito", img: "https://i.postimg.cc/FR0FCpRm/CZ-Batch-7-Cocktail-Card-1000x1000-Mojito-Static-1-png.webp", price: 0.0006 },
-    { name: "Vodka", img: "https://i.postimg.cc/6pS99g4t/1751631140331.png", price: 0.0006 },
-    { name: "Whiskey", img: "https://i.postimg.cc/zBw5FftG/1751631202396.png", price: 0.0008 },
-    { name: "Martini", img: "https://i.postimg.cc/RVpmRyRK/1751631267626.png", price: 0.0007 }
-  ];
+    let shakeCount = parseInt(localStorage.getItem(LS_SHAKE)) || 0;
+    let balance = parseFloat(localStorage.getItem(LS_BAL)) || 0;
+    let drinks = JSON.parse(localStorage.getItem(LS_DRINKS)) || [];
+    let adsWatched = parseInt(localStorage.getItem(LS_ADS)) || 0;
+    let adsDate = localStorage.getItem(LS_DATE) || new Date().toISOString().slice(0,10);
 
-  // LocalStorage açarları
-  const LS_SHAKE = 'shakeCount';
-  const LS_DRINKS = 'myDrinks';
-  const LS_BALANCE = 'myBalance';
-  const LS_ADS = 'adsWatched';
-  const LS_ADS_DATE = 'adsDate';
+    const MAX_ADS = 50;
 
-  // Limit maksimum
-  const MAX_ADS_PER_DAY = 50;
+    const drinkData = [
+      { name: "Rum", img: "https://i.postimg.cc/vTLBThFX/1751630934178.png" },
+      { name: "Tequila", img: "https://i.postimg.cc/zGfBDTdS/1751631002805.png" },
+      { name: "Mojito", img: "https://i.postimg.cc/FR0FCpRm/CZ-Batch-7-Cocktail-Card-1000x1000-Mojito-Static-1-png.webp" },
+      { name: "Vodka", img: "https://i.postimg.cc/6pS99g4t/1751631140331.png" },
+      { name: "Whiskey", img: "https://i.postimg.cc/zBw5FftG/1751631202396.png" },
+      { name: "Martini", img: "https://i.postimg.cc/RVpmRyRK/1751631267626.png" }
+    ];
 
-  // İndex və yaddaşdan məlumat yüklə
-  let shakeCount = Number(localStorage.getItem(LS_SHAKE)) || 10;
-  let drinks = JSON.parse(localStorage.getItem(LS_DRINKS)) || [];
-  let balance = Number(localStorage.getItem(LS_BALANCE)) || 0;
-  let adsWatched = Number(localStorage.getItem(LS_ADS)) || 0;
-  let adsDate = localStorage.getItem(LS_ADS_DATE) || null;
-
-  // Gündəlik tarix yoxla, dəyişibsə reset et
-  function checkAdsDate() {
-    const today = new Date().toISOString().slice(0,10);
-    if(adsDate !== today) {
-      adsWatched = 0;
-      adsDate = today;
-      localStorage.setItem(LS_ADS, adsWatched);
-      localStorage.setItem(LS_ADS_DATE, adsDate);
+    function checkAdReset() {
+      let today = new Date().toISOString().slice(0,10);
+      if (adsDate !== today) {
+        adsWatched = 0;
+        adsDate = today;
+        localStorage.setItem(LS_ADS, adsWatched);
+        localStorage.setItem(LS_DATE, adsDate);
+      }
     }
-  }
-  checkAdsDate();
+    checkAdReset();
 
-  // Shake sayını göstər
-  function updateShakeText() {
-    document.getElementById('shakeCount').innerText = `Shake: ${shakeCount}/10`;
-  }
+    function updateUI() {
+      document.getElementById('shakeCount').innerText = `Shake: ${shakeCount}/10`;
+      document.getElementById('reklamLimit').innerText = `Reklam izləmə: ${adsWatched}/${MAX_ADS}`;
+    }
 
-  // Reklam limitini göstər
-  function updateAdLimitText() {
-    document.getElementById('reklamLimit').innerText = `Reklam izləmə: ${adsWatched} / ${MAX_ADS_PER_DAY}`;
-  }
+    function saveData() {
+      localStorage.setItem(LS_SHAKE, shakeCount);
+      localStorage.setItem(LS_BAL, balance);
+      localStorage.setItem(LS_DRINKS, JSON.stringify(drinks));
+    }
 
-  // Rəfdəki içkiləri göstər
-  function renderShelf() {
-    const list = document.getElementById('drinkList');
-    list.innerHTML = '';
-    drinks.forEach((drink, i) => {
-      const div = document.createElement('div');
-      div.className = 'drinkItem color' + (i % 6);
-      div.innerHTML = `
-        <img src="${drink.img}" alt="${drink.name}" />
-        <div>${drink.name}</div>
-        <div>${drink.price.toFixed(4)} TON</div>
-        ${drink.price >= 1 ? `<button onclick="withdraw(${i})">Çıxarış</button>` : ''}
-      `;
-      list.appendChild(div);
-    });
-  }
+    async function showAd() {
+      return new Promise(resolve => {
+        show_9532911().then(() => {
+          adsWatched++;
+          shakeCount = 10;
+          localStorage.setItem(LS_ADS, adsWatched);
+          saveData();
+          updateUI();
+          alert('10 shake qazandın!');
+          resolve();
+        });
+      });
+    }
 
-  // Çıxarış funksiyası (sadəcə alert - adminə mesaj gedir əvəzi)
-  function withdraw(index) {
-    alert(`Adminə çıxarış istəyi göndərildi:\n\nİçki: ${drinks[index].name}\nMəbləğ: ${drinks[index].price.toFixed(4)} TON`);
-    // İstəsən burda serverə POST ilə adminə göndərmə kodu yaza bilərsən.
-  }
-
-  // Shake üçün reklam izlətmə funksiyası
-  function watchAd() {
-    return new Promise((resolve, reject) => {
-      if(adsWatched >= MAX_ADS_PER_DAY) {
-        alert('Bugünkü reklam limitin bitib!');
-        reject('Limit dolu');
+    document.getElementById('shaker').addEventListener('click', async () => {
+      if (shakeCount <= 0) {
+        if (adsWatched >= MAX_ADS) return alert('Limit dolub!');
+        await showAd();
         return;
       }
-      // Burada reklam SDK çağırışı yazılır, aşağıda simulyasiya var
-      // show_9532911() funksiyasını əvəz edir
 
-      // Simulyasiya: 3 saniyə reklam izləmə
-      setTimeout(() => {
-        alert('Reklamı bitirdin! 10 shake qazandın!');
-        adsWatched++;
-        localStorage.setItem(LS_ADS, adsWatched);
-        updateAdLimitText();
-        resolve();
-      }, 3000);
-    });
-  }
-
-  // Shaker klik funksiyası
-  document.getElementById('shaker').addEventListener('click', async () => {
-    if(shakeCount > 0) {
       shakeCount--;
-      localStorage.setItem(LS_SHAKE, shakeCount);
-      updateShakeText();
-
-      if(shakeCount === 0) {
-        // Rəfdə təsadüfi içki göstər
+      if (shakeCount === 0) {
         const drink = drinkData[Math.floor(Math.random() * drinkData.length)];
-        drinks.push(drink);
-        localStorage.setItem(LS_DRINKS, JSON.stringify(drinks));
-        renderShelf();
-        alert(`Yeni içki əlavə olundu: ${drink.name} (${drink.price.toFixed(4)} TON)`);
+        const price = (Math.random() * (0.0008 - 0.0005) + 0.0005).toFixed(4);
+        drinks.push({ ...drink, price: parseFloat(price) });
+        alert(`Yeni içki: ${drink.name} (${price} TON)`);
       }
-    } else {
-      // Shake bitibsə reklam izlət
-      try {
-        await watchAd();
-        shakeCount = 10;
-        localStorage.setItem(LS_SHAKE, shakeCount);
-        updateShakeText();
-      } catch(e) {
-        // limit dolu, heç nə etmə
-      }
+      saveData();
+      updateUI();
+    });
+
+    document.getElementById('shelfBtn').addEventListener('click', () => {
+      document.getElementById('shelfPopup').style.display = 'block';
+      const list = document.getElementById('drinkList');
+      list.innerHTML = '';
+      drinks.forEach((d, i) => {
+        const div = document.createElement('div');
+        div.className = 'drinkItem';
+        div.innerHTML = `<img src="${d.img}"><br>${d.name}<br>${d.price.toFixed(4)} TON<br>
+        <button onclick="sellDrink(${i})">Sat</button>
+        ${d.price >= 1 ? '<button onclick=withdraw()>Çıxarış</button>' : ''}`;
+        list.appendChild(div);
+      });
+    });
+
+    function sellDrink(i) {
+      balance += drinks[i].price;
+      drinks.splice(i, 1);
+      saveData();
+      updateUI();
+      document.getElementById('shelfBtn').click();
     }
-  });
 
-  // Rəf popup aç/bağla
-  document.getElementById('shelfBtn').addEventListener('click', () => {
-    const popup = document.getElementById('shelfPopup');
-    popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
-    renderShelf();
-  });
-  // Rəf popup bağla düyməsi
-  document.querySelector('.closeBtn').addEventListener('click', () => {
-    document.getElementById('shelfPopup').style.display = 'none';
-  });
+    document.getElementById('balanceBtn').addEventListener('click', () => {
+      alert(`Balans: ${balance.toFixed(4)} TON`);
+    });
 
-  // Balans düyməsi - alertlə balansı göstər
-  document.getElementById('balanceBtn').addEventListener('click', () => {
-    alert(`Balans: ${balance.toFixed(4)} TON\nÇıxarış üçün ən azı 1 TON içkin olmalıdır.`);
-  });
+    function withdraw() {
+      alert('Çıxarış sorğusu göndərildi! Telegram: @Mansio44 ID: 8197921729');
+      // Buraya real Telegram API POST göndərə bilərən
+    }
 
-  // Başlanğıc göstərişləri
-  updateShakeText();
-  updateAdLimitText();
-  renderShelf();
-</script>
-
-</body>
+    updateUI();
+  </script></body>
 </html>
