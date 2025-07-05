@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shake İçki Oyunu</title>
+  <style>
+    body {
+      margin: 0;
+      background: url('https://i.postimg.cc/DZTBLf46/barlesieur-51-1.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: sans-serif;
+      color: #fff;
+      text-align: center;
+      overflow-x: hidden;
+    }
+    #shaker {
+      width: 150px;
+      height: 150px;
+      margin: 80px auto 20px;
+      background: url('https://i.postimg.cc/zDLFvRQN/1751630764334.png') no-repeat center;
+      background-size: contain;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    #shaker.shake {
+      animation: shake 0.3s linear infinite;
+    }
+    @keyframes shake {
+      0% { transform: translate(2px, 2px); }
+      25% { transform: translate(-2px, -2px); }
+      50% { transform: translate(2px, -2px); }
+      75% { transform: translate(-2px, 2px); }
+      100% { transform: translate(2px, 2px); }
+    }
+    #shakeCount {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    #drinkDisplay {
+      display: none;
+      font-size: 18px;
+      margin-top: 20px;
+      background: rgba(0,0,0,0.7);
+      padding: 20px;
+      border-radius: 12px;
+    }
+    #drinkDisplay img {
+      max-width: 120px;
+      display: block;
+      margin: 0 auto 10px;
+    }
+    .led-button {
+      border: 2px solid lime;
+      box-shadow: 0 0 15px lime;
+      animation: blink 1s infinite;
+    }
+    @keyframes blink {
+      0% { box-shadow: 0 0 5px lime; }
+      50% { box-shadow: 0 0 15px lime; }
+      100% { box-shadow: 0 0 5px lime; }
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #555;
+      color: #999;
+      cursor: not-allowed;
+      box-shadow: none !important;
+      animation: none !important;
+      border-color: #999;
+    }
+    #shelfPopup {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('https://i.postimg.cc/DZTBLf46/barlesieur-51-1.jpg') no-repeat center center;
+      background-size: cover;
+      backdrop-filter: brightness(0.6);
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 1000;
+    }
+    #shelfPopup h3 {
+      margin-top: 0;
+    }
+    #drinkList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .drinkItem {
+      background: #6b4e16;
+      border-radius: 10px;
+      padding: 10px;
+      color: #fff;
+      text-align: center;
+      width: 120px;
+    }
+    .drinkItem img {
+      width: 80px;
+      margin-bottom: 5px;
+    }
+    .closeBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: red;
+      color: white;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+    }
+    #adLimit {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 8px 15px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #0f0;
+      user-select: none;
+      box-shadow: 0 0 10px #0f0;
+    }
+  </style>
+</head>
+<body>
+  <div id="shakeCount">Shake: 10/10</div>
+  <div id="shaker"></div>
+
+  <div id="drinkDisplay">
+    <img id="drinkImg" src="" alt="İçki" />
+    <div id="drinkName"></div>
+    <div id="drinkPrice"></div>
+    <button onclick="addToShelf()">Rəfə əlavə et</button>
+  </div>
+
+  <button id="reklamBtn">Reklam izlə 10 shake qazan</button>
+  <button class="led-button" onclick="toggleShelf()">Rəf</button>
+  <button class="led-button" onclick="checkBalance()">Balans</button>
+
+  <div id="shelfPopup">
+    <button class="closeBtn" onclick="toggleShelf()">×</button>
+    <h3>Sənin İçkilərin</h3>
+    <div id="drinkList"></div>
+  </div>
+
+  <div id="adLimit">Reklam izləmə: 0 / 50</div>
+
+<script>
+  // --- Config ---
+  const MAX_SHAKE = 10;
+  const MAX_ADS_PER_DAY = 50;
+
+  // --- Variables ---
+  let shakeCount = 0;
+  let drinks = [];
+  let balance = 0;
+  let adWatchCount = 0;
+  let lastAdWatchDate = null;
+
+  // --- Drink data ---
+  const drinkData = [
+    { name: "Rum", img: "https://i.postimg.cc/vTLBThFX/1751630934178.png", price: 0.0007 },
+    { name: "Tequila", img: "https://i.postimg.cc/zGfBDTdS/1751631002805.png", price: 0.0008 },
+    { name: "Mojito", img: "https://i.postimg.cc/FR0FCpRm/CZ-Batch-7-Cocktail-Card-1000x1000-Mojito-Static-1-png.webp", price: 0.0006 },
+    { name: "Vodka", img: "https://i.postimg.cc/6pS99g4t/1751631140331.png", price: 0.0006 },
+    { name: "Whiskey", img: "https://i.postimg.cc/zBw5FftG/1751631202396.png", price: 0.0008 },
+    { name: "Martini", img: "https://i.postimg.cc/RVpmRyRK/1751631267626.png", price: 0.0007 }
+  ];
+
+  // --- Init ---
+  function init() {
+    loadData();
+    checkDateReset();
+    updateShakeText();
+    updateDrinkList();
+    updateBalance();
+    updateAdLimitText();
+    updateAdButtonState();
+  }
+
+  // --- LocalStorage load ---
+  function loadData() {
+    const savedShake = localStorage.getItem('shakeCount');
+    const savedDrinks = localStorage.getItem('drinks');
+    const savedBalance = localStorage.getItem('balance');
+    const savedAdWatchCount = localStorage.getItem('adWatchCount');
+    const savedAdWatchDate = localStorage.getItem('lastAdWatchDate');
+
+    shakeCount = savedShake !== null ? parseInt(savedShake) : MAX_SHAKE;
+    drinks = savedDrinks ? JSON.parse(savedDrinks) : [];
+    balance = savedBalance ? parseFloat(savedBalance) : 0;
+    adWatchCount = savedAdWatchCount ? parseInt(savedAdWatchCount) : 0;
+    lastAdWatchDate = savedAdWatchDate || null;
+  }
+
+  // --- LocalStorage save ---
+  function saveData() {
+    localStorage.setItem('shakeCount', shakeCount);
+    localStorage.setItem('drinks', JSON.stringify(drinks));
+    localStorage.setItem('balance', balance);
+    localStorage.setItem('adWatchCount', adWatchCount);
+    localStorage.setItem('lastAdWatchDate', lastAdWatchDate);
+  }
+
+  // --- Check if day changed to reset adWatchCount ---
+  function checkDateReset() {
+    const today = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+    if (lastAdWatchDate !== today) {
+      adWatchCount = 0;
+      lastAdWatchDate = today;
+      saveData();
+    }
+  }
+
+  // --- Update Shake Text ---
+  function updateShakeText() {
+    document.getElementById('shakeCount').innerText = `Shake: ${shakeCount} / ${MAX_SHAKE}`;
+  }
+
+  // --- Update Ad Limit Text ---
+  function updateAdLimitText() {
+    document.getElementById('adLimit').innerText = `Reklam izləmə: ${adWatchCount} / ${MAX_ADS_PER_DAY}`;
+  }
+
+  // --- Update Ad Button State ---
+  function updateAdButtonState() {
+    const btn = document.getElementById('reklamBtn');
+    if(adWatchCount >= MAX_ADS_PER_DAY) {
+      btn.disabled = true;
+      btn.innerText = 'Gündəlik limit doldu';
+    } else {
+      btn.disabled = false;
+      btn.innerText = 'Reklam izlə 10 shake qazan';
+    }
+  }
+
+  // --- Update Drink List ---
+  function updateDrinkList() {
+    const list = document.getElementById('drinkList');
+    list.innerHTML = '';
+    drinks.forEach((drink, i) => {
+      const item = document.createElement('div');
+      item.className = 'drinkItem';
+      item.innerHTML = `
+        <img src="${drink.img}" />
+        <strong>${drink.name}</strong><br/>
+        ${drink.price.toFixed(4)} TON<br/>
+        <button onclick="sellDrink(${i})">Sat</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  // --- Update Balance Display ---
+  function updateBalance() {
+    // You can update a balance display somewhere if you want
+  }
+
+  // --- Shake Handler ---
+  document.getElementById('shaker').addEventListener('click', () => {
+    if(shakeCount > 0) {
+      shakeCount--;
+      updateShakeText();
+      saveData();
+
+      if(shakeCount === 0) {
+        const drink = drinkData[Math.floor(Math.random() * drinkData.length)];
+        document.getElementById('drinkImg').src = drink.img;
+        document.getElementById('drinkName').innerText = drink.name;
+        document.getElementById('drinkPrice').innerText = `Qiymət: ${drink.price.toFixed(4)} TON`;
+        document.getElementById('drinkDisplay').style.display = 'block';
+      }
+    }
+  });
+
+  // --- Add to Shelf ---
+  function addToShelf() {
+    const name = document.getElementById('drinkName').innerText;
+    const img = document.getElementById('drinkImg').src;
+    const price = parseFloat(document.getElementById('drinkPrice').innerText.split(':')[1]);
+    drinks.push({ name, img, price });
+    document.getElementById('drinkDisplay').style.display = 'none';
+    shakeCount = MAX_SHAKE;
+    updateShakeText();
+    updateDrinkList();
+    saveData();
+  }
+
+  // --- Toggle Shelf Popup ---
+  function toggleShelf() {
+    const popup = document.getElementById('shelfPopup');
+    if(popup.style.display === 'block') {
+      popup.style.display = 'none';
+    } else {
+      popup.style.display = 'block';
+      updateDrinkList();
+    }
+  }
+
+  // --- Sell Drink ---
+  function sellDrink(index) {
+    balance += drinks[index].price;
+    drinks.splice(index, 1);
+    saveData();
+    toggleShelf();
+    toggleShelf();
+  }
+
+  // --- Check Balance ---
+  function checkBalance() {
+    let message = `Balans: ${balance.toFixed(4)} TON\n`;
+    if(balance >= 1) {
+      message += `Çıxarış üçün bu şəxsə yazın: @Mansio44\nİstifadəçi ID: 8197921729`;
+      balance = 0;
+      saveData();
+    } else {
+      message += 'Balansda kifayət qədər TON yoxdur (minimum 1 TON)';
+    }
+    alert(message);
+  }
+
+  // --- Reklam izləmə funksiyası ---
+  document.getElementById('reklamBtn').addEventListener('click', () => {
+    if(adWatchCount >= MAX_ADS_PER_DAY) {
+      alert('Gündəlik reklam izləmə limiti dolub.');
+      return;
+    }
+    show_9532911().then(() => {
+      shakeCount = MAX_SHAKE;
+      adWatchCount++;
+      updateShakeText();
+      updateAdLimitText();
+      updateAdButtonState();
+      saveData();
+      alert('10 shake əlavə olundu!');
+    });
+  });
+
+  // --- Simulyasiya üçün reklam funksiyası ---
+  function show_9532911() {
+    return new Promise(resolve => {
+      // Burada real reklam SDK-si çağırılacaq
+      setTimeout(() => {
+        alert('Reklam izlədiniz!');
+        resolve();
+      }, 2000);
+    });
+  }
+
+  // --- İnit ---
+  init();
+</script>
+</body>
+</html>
