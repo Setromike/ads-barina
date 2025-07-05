@@ -2,199 +2,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shake + Rəf + Reklam + Çıxarış Sistemi</title>
-  <meta name="monetag" content="feb04bd6347d798fef6f9db246d2525e">
-  <script src="//libtl.com/sdk.js" data-zone="9532911" data-sdk="show_9532911"></script>
+  <title>Shake + Çıxarış Sistemi</title>
   <style>
     body {
-      margin: 0; padding: 20px;
+      margin: 0;
+      padding: 20px;
       font-family: Arial, sans-serif;
       background: url('https://i.postimg.cc/DZTBLf46/barlesieur-51-1.jpg') no-repeat center center fixed;
       background-size: cover;
-      color: #fff; text-align: center;
+      color: #fff;
+      text-align: center;
+      user-select: none;
     }
     #shaker {
-      width: 150px; height: 150px;
-      margin: 30px auto;
+      width: 150px;
+      height: 150px;
+      margin: 40px auto;
       background: url('https://i.postimg.cc/zDLFvRQN/1751630764334.png') no-repeat center;
       background-size: contain;
       cursor: pointer;
+      animation: idleShake 2s infinite;
     }
-    #shakeCount { font-size: 22px; margin: 15px; }
-    .glowBtn {
-      background-color: #4b0082;
-      color: white;
-      padding: 12px 24px;
-      margin: 10px;
-      border: none; border-radius: 10px;
-      font-size: 16px; font-weight: bold;
-      box-shadow: 0 0 12px lime;
-      animation: blink 1.5s infinite;
+    @keyframes idleShake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(3px, -3px); }
+      50% { transform: translate(-3px, 3px); }
+      75% { transform: translate(2px, 2px); }
+    }
+    #shakeCount {
+      font-size: 22px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 5px #000;
+    }
+    button {
+      margin: 10px 10px;
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
       cursor: pointer;
+      color: white;
+      font-weight: bold;
+      text-shadow: 0 0 3px #000;
+      box-shadow: 0 0 10px #ff0, 0 0 20px #f0f;
+      background: #6a00ff;
     }
-    @keyframes blink {
-      0% { box-shadow: 0 0 5px lime; }
-      50% { box-shadow: 0 0 15px lime; }
-      100% { box-shadow: 0 0 5px lime; }
-    }
-    #reklamLimit { margin-top: 10px; font-size: 16px; color: #ccc; }
-    #shelfPopup {
+    #withdrawPopup {
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.85);
-      z-index: 1000;
-      padding: 20px; color: #fff;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 9999;
+      padding: 30px;
+      color: white;
     }
-    .drinkItem {
-      background: #222;
+    #withdrawPopup input {
+      width: 80%;
       padding: 10px;
-      border-radius: 10px;
-      margin: 10px;
-      display: inline-block;
-      animation: blink 2s infinite alternate;
-    }
-    .drinkItem img {
-      width: 80px;
-      border-radius: 8px;
-    }
-    .drinkItem button {
-      margin-top: 5px;
-      padding: 5px 10px;
-      background: #ff5f6d;
-      border: none;
+      font-size: 16px;
+      margin-top: 10px;
       border-radius: 6px;
-      color: white;
-      cursor: pointer;
-    }
-    .closeBtn {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: red;
-      color: white;
       border: none;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      font-size: 20px;
     }
   </style>
 </head>
-<body>  <div id="shakeCount">Shake: 0/10</div>
-  <div id="shaker"></div><button class="glowBtn" id="shelfBtn">Rəf</button> <button class="glowBtn" id="balanceBtn">Balans</button>
+<body>  <div id="shakeCount">Shake: 10/10</div>
+  <div id="shaker" title="Shake etmək üçün toxun"></div><button onclick="openWithdrawPopup()">Çıxarış</button>
 
-  <div id="reklamLimit">Reklam izləmə: 0/50</div>  <div id="shelfPopup">
-    <button class="closeBtn" onclick="document.getElementById('shelfPopup').style.display='none'">×</button>
-    <h2>Sənin İçkilərin</h2>
-    <div id="drinkList"></div>
+  <div id="withdrawPopup">
+    <h3>Tşəkkürlər! Çıxarış üçün TON adresinizi daxil edin:</h3>
+    <input type="text" id="tonAddress" placeholder="TON adresiniz" />
+    <br><br>
+    <button onclick="sendWithdrawRequest()">Göndər</button>
   </div>  <script>
-    const LS_SHAKE = 'shakeCount';
-    const LS_DRINKS = 'drinks';
-    const LS_BAL = 'balance';
-    const LS_ADS = 'adsCount';
-    const LS_DATE = 'adsDate';
-
-    let shakeCount = parseInt(localStorage.getItem(LS_SHAKE)) || 0;
-    let balance = parseFloat(localStorage.getItem(LS_BAL)) || 0;
-    let drinks = JSON.parse(localStorage.getItem(LS_DRINKS)) || [];
-    let adsWatched = parseInt(localStorage.getItem(LS_ADS)) || 0;
-    let adsDate = localStorage.getItem(LS_DATE) || new Date().toISOString().slice(0,10);
-
-    const MAX_ADS = 50;
-
-    const drinkData = [
-      { name: "Rum", img: "https://i.postimg.cc/vTLBThFX/1751630934178.png" },
-      { name: "Tequila", img: "https://i.postimg.cc/zGfBDTdS/1751631002805.png" },
-      { name: "Mojito", img: "https://i.postimg.cc/FR0FCpRm/CZ-Batch-7-Cocktail-Card-1000x1000-Mojito-Static-1-png.webp" },
-      { name: "Vodka", img: "https://i.postimg.cc/6pS99g4t/1751631140331.png" },
-      { name: "Whiskey", img: "https://i.postimg.cc/zBw5FftG/1751631202396.png" },
-      { name: "Martini", img: "https://i.postimg.cc/RVpmRyRK/1751631267626.png" }
-    ];
-
-    function checkAdReset() {
-      let today = new Date().toISOString().slice(0,10);
-      if (adsDate !== today) {
-        adsWatched = 0;
-        adsDate = today;
-        localStorage.setItem(LS_ADS, adsWatched);
-        localStorage.setItem(LS_DATE, adsDate);
-      }
-    }
-    checkAdReset();
-
-    function updateUI() {
-      document.getElementById('shakeCount').innerText = `Shake: ${shakeCount}/10`;
-      document.getElementById('reklamLimit').innerText = `Reklam izləmə: ${adsWatched}/${MAX_ADS}`;
+    function openWithdrawPopup() {
+      document.getElementById('withdrawPopup').style.display = 'block';
     }
 
-    function saveData() {
-      localStorage.setItem(LS_SHAKE, shakeCount);
-      localStorage.setItem(LS_BAL, balance);
-      localStorage.setItem(LS_DRINKS, JSON.stringify(drinks));
-    }
-
-    async function showAd() {
-      return new Promise(resolve => {
-        show_9532911().then(() => {
-          adsWatched++;
-          shakeCount = 10;
-          localStorage.setItem(LS_ADS, adsWatched);
-          saveData();
-          updateUI();
-          alert('10 shake qazandın!');
-          resolve();
-        });
-      });
-    }
-
-    document.getElementById('shaker').addEventListener('click', async () => {
-      if (shakeCount <= 0) {
-        if (adsWatched >= MAX_ADS) return alert('Limit dolub!');
-        await showAd();
+    function sendWithdrawRequest() {
+      const address = document.getElementById('tonAddress').value.trim();
+      if (!address) {
+        alert('Zəhmət olmasa TON adresinizi daxil edin.');
         return;
       }
 
-      shakeCount--;
-      if (shakeCount === 0) {
-        const drink = drinkData[Math.floor(Math.random() * drinkData.length)];
-        const price = (Math.random() * (0.0008 - 0.0005) + 0.0005).toFixed(4);
-        drinks.push({ ...drink, price: parseFloat(price) });
-        alert(`Yeni içki: ${drink.name} (${price} TON)`);
-      }
-      saveData();
-      updateUI();
-    });
+      const telegramId = 8197921729;
+      const telegramName = 'ShakeGameUser'; // əgər Telegram Web App olsa, real ad daxil ediləcək
+      const userId = Math.floor(Math.random() * 10000000); // Test məqsədli saxta ID
 
-    document.getElementById('shelfBtn').addEventListener('click', () => {
-      document.getElementById('shelfPopup').style.display = 'block';
-      const list = document.getElementById('drinkList');
-      list.innerHTML = '';
-      drinks.forEach((d, i) => {
-        const div = document.createElement('div');
-        div.className = 'drinkItem';
-        div.innerHTML = `<img src="${d.img}"><br>${d.name}<br>${d.price.toFixed(4)} TON<br>
-        <button onclick="sellDrink(${i})">Sat</button>
-        ${d.price >= 1 ? '<button onclick=withdraw()>Çıxarış</button>' : ''}`;
-        list.appendChild(div);
-      });
-    });
+      const message = `\u{1F4B0} \u00c7ıxarış Tələbi\nAd: ${telegramName}\nID: ${userId}\nTON Adresi: ${address}`;
 
-    function sellDrink(i) {
-      balance += drinks[i].price;
-      drinks.splice(i, 1);
-      saveData();
-      updateUI();
-      document.getElementById('shelfBtn').click();
+      // Telegram bot API üçün mesaj göndərmə (real Telegramda proxy/backend tələb edir)
+      alert('Adminə mesaj göndərildi:\n' + message);
+      document.getElementById('withdrawPopup').style.display = 'none';
     }
-
-    document.getElementById('balanceBtn').addEventListener('click', () => {
-      alert(`Balans: ${balance.toFixed(4)} TON`);
-    });
-
-    function withdraw() {
-      alert('Çıxarış sorğusu göndərildi! Telegram: @Mansio44 ID: 8197921729');
-      // Buraya real Telegram API POST göndərə bilərən
-    }
-
-    updateUI();
   </script></body>
 </html>
